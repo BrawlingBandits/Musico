@@ -1,19 +1,19 @@
 const ytdl = require('ytdl-core-discord');
-const yt = require("scrape-yt");
+var scrapeYt = require("scrape-yt");
 const discord = require('discord.js')
 
-//module.exports 
-//all the user cases
+exports.run = async (client, message, args) => {
+
+    if(!args[0]) return message.channel.send('You didn\'t provide a song to play!')
     let channel = message.member.voice.channel;
-    if(!args[0]) return message.channel.send('Gimme a song or a youtube video to play :C')
-    if(!channel) return message.channel.send('You need to join a voice channel to play a music:O')
+    if(!channel) return message.channel.send('You need to join a voice channel to play a music!')
 
     if (!channel.permissionsFor(message.client.user).has("CONNECT")) return message.channel.send('I don\'t have permission to join the voice channel')
     if (!channel.permissionsFor(message.client.user).has("SPEAK"))return message.channel.send('I don\'t have permission to speak in the voice channel')
 
-//get the song user wants and check for it's details
+
     const server = message.client.queue.get(message.guild.id);
-    let video = await yt.search(args.join(' '))
+    let video = await scrapeYt.search(args.join(' '))
     let result = video[0]
 
     const song = {
@@ -21,29 +21,29 @@ const discord = require('discord.js')
         title: result.title,
         duration: result.duration,
         thumbnail: result.thumbnail,
-        uploadDate: result.uploadDate,
+        upload: result.uploadDate,
         views: result.viewCount,
-        requestedBy: message.author,
+        requester: message.author,
         channel: result.channel.name,
         channelurl: result.channel.url
       };
-//to check fot the song duration(copied this part)
-    let date = new Date(0);
-    date.setSeconds(song.duration); // specify value for SECONDS here fromm the song
-    let timeString = date.toISOString().substr(11, 8);
 
-      if (server) { //if a queue exists then it would add the song
+    var date = new Date(0);
+    date.setSeconds(song.duration); // specify value for SECONDS here
+    var timeString = date.toISOString().substr(11, 8);
+
+      if (server) {
         server.songs.push(song);
-
-        let addtoque = new discord.MessageEmbed()
+        console.log(server.songs);
+        let embed = new discord.MessageEmbed()
         .setTitle('Added to queue!')
-        .setColor('#00ff00')
+        .setColor('#00fff1')
         .addField('Name', song.title, true)
         .setThumbnail(song.thumbnail)
         .addField('Views', song.views, true)
         .addField('Reqeusted By', song.requester, true)
         .addField('Duration', timeString, true)
-        return message.channel.send(addtoque)
+        return message.channel.send(embed)
     }
 
     const queueConstruct = {
@@ -51,14 +51,14 @@ const discord = require('discord.js')
         voiceChannel: channel,
         connection: null,
         songs: [],
-        volume: 3,
+        volume: 2,
         playing: true
     };
     message.client.queue.set(message.guild.id, queueConstruct);
     queueConstruct.songs.push(song);
 
 
-    const play = async song => { //if there are no songs the user wants to play(in queue) then it would leave the vc
+    const play = async song => {
         const queue = message.client.queue.get(message.guild.id);
         if (!song) {
             queue.voiceChannel.leave();
@@ -75,18 +75,18 @@ const discord = require('discord.js')
         })
             .on('finish', () => {
                 queue.songs.shift();
-                play(queue.songs[0]); // when the song is finished it plays the next song in queue
+                play(queue.songs[0]);
             })
             .on('error', error => console.error(error));
-        dispatcher.setVolumeLogarithmic(queue.volume / 7);//default volume
-        let onstartsong = new discord.MessageEmbed()
-        .setTitle('Now Playing!')
+        dispatcher.setVolumeLogarithmic(queue.volume / 5);
+        let noiceEmbed = new discord.MessageEmbed()
+        .setTitle('Started Playing')
         .setThumbnail(song.thumbnail)
         .addField('Name', song.title, true)
+        .addField('Requested By', song.requester, true)
         .addField('Views', song.views, true)
         .addField('Duration', timeString, true)
-        .setFooter('Requested By', song.requester, true )
-        queue.textChannel.send(onstartsong);
+        queue.textChannel.send(noiceEmbed);
     };
 
 
@@ -95,9 +95,9 @@ const discord = require('discord.js')
         queueConstruct.connection = connection;
         play(queueConstruct.songs[0]);
     } catch (error) {
-        console.error(`A error has occured while joining a vc`);
+        console.error(`I could not join the voice channel`);
         message.client.queue.delete(message.guild.id);
         await channel.leave();
-        return message.channel.send(`There was a error so i had to leave if this persists join my server  `);
+        return message.channel.send(`I could not join the voice channel: ${error}`);
     }
-   
+}

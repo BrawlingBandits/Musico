@@ -22,5 +22,5 @@ exports.run = async(client, message, args) => {
 
     if (lyricsEmbed.description.length >= 2000)
       lyricsEmbed.description = `Sorry but it looks like the lyrics are way to long`;
-    return message.channel.send(lyricsEmbed).catch(message.channel.send("Uh Oh! Looks like a error occured in finding the lyrics."));
+    return message.channel.send(lyricsEmbed).catch(console.error);
 }

@@ -3,8 +3,8 @@ const fs = require("fs");
 
 
 const client = new Discord.Client();
-const config = require("./config.json");
-
+const config = require("./config.js");
+client.config = config;
 client.queue = new Map()
 
 fs.readdir("./events/", (err, files) => {
@@ -24,7 +24,7 @@ fs.readdir("./commands/", (err, files) => {
     if (!file.endsWith(".js")) return;
     let props = require(`./commands/${file}`);
     let commandName = file.split(".")[0];
-    console.log(` ${commandName}`);
+    console.log(`----Musico----- ${commandName}`);
     client.commands.set(commandName, props);
   });
 });
